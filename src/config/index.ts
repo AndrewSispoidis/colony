@@ -12,6 +12,11 @@ function ensureColonyDir(): void {
   }
 }
 
+export function getColonyDir(): string {
+  ensureColonyDir();
+  return COLONY_DIR;
+}
+
 export function loadConfig(): ColonyConfig {
   ensureColonyDir();
   if (!fs.existsSync(CONFIG_PATH)) {
@@ -32,6 +37,23 @@ export function getAnthropicKey(): string | undefined {
   }
   const config = loadConfig();
   return config.apiKey;
+}
+
+export function getOpenAIKey(): string | undefined {
+  if (process.env.OPENAI_API_KEY) {
+    return process.env.OPENAI_API_KEY;
+  }
+  const config = loadConfig();
+  return config.openaiKey;
+}
+
+export function getBestAvailableProvider(): "anthropic" | "openai" | null {
+  const config = loadConfig();
+  if (config.defaultProvider === "openai" && getOpenAIKey()) return "openai";
+  if (config.defaultProvider === "anthropic" && getAnthropicKey()) return "anthropic";
+  if (getAnthropicKey()) return "anthropic";
+  if (getOpenAIKey()) return "openai";
+  return null;
 }
 
 export function setConfigValue(dotPath: string, value: string): void {

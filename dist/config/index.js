@@ -8,6 +8,10 @@ function ensureColonyDir() {
         fs.mkdirSync(COLONY_DIR, { recursive: true });
     }
 }
+export function getColonyDir() {
+    ensureColonyDir();
+    return COLONY_DIR;
+}
 export function loadConfig() {
     ensureColonyDir();
     if (!fs.existsSync(CONFIG_PATH)) {
@@ -26,6 +30,25 @@ export function getAnthropicKey() {
     }
     const config = loadConfig();
     return config.apiKey;
+}
+export function getOpenAIKey() {
+    if (process.env.OPENAI_API_KEY) {
+        return process.env.OPENAI_API_KEY;
+    }
+    const config = loadConfig();
+    return config.openaiKey;
+}
+export function getBestAvailableProvider() {
+    const config = loadConfig();
+    if (config.defaultProvider === "openai" && getOpenAIKey())
+        return "openai";
+    if (config.defaultProvider === "anthropic" && getAnthropicKey())
+        return "anthropic";
+    if (getAnthropicKey())
+        return "anthropic";
+    if (getOpenAIKey())
+        return "openai";
+    return null;
 }
 export function setConfigValue(dotPath, value) {
     const config = loadConfig();

@@ -9,13 +9,16 @@ import { listCommand } from "./commands/list.js";
 import { runCommand } from "./commands/run.js";
 import { agentInitCommand, agentTestCommand } from "./commands/agent/index.js";
 import { publishCommand } from "./commands/publish.js";
+import { loginCommand, registerCommand } from "./commands/login.js";
+import { statusCommand } from "./commands/status.js";
+import { memoryListCommand, memoryClearCommand, memorySearchCommand } from "./commands/memory.js";
 
 const program = new Command();
 
 program
   .name("colony")
   .description("The universal agent composition standard — install, compose, and run AI agents")
-  .version("0.1.0");
+  .version("0.2.0");
 
 // Setup
 program
@@ -111,8 +114,58 @@ agent
 program
   .command("publish")
   .description("Publish an agent to the Colony registry")
+  .action(async () => {
+    await publishCommand();
+  });
+
+// Login
+program
+  .command("login")
+  .description("Log in to the Colony registry")
+  .action(async () => {
+    await loginCommand();
+  });
+
+// Register
+program
+  .command("register")
+  .description("Create a Colony registry account")
+  .action(async () => {
+    await registerCommand();
+  });
+
+// Status
+program
+  .command("status")
+  .description("Show Colony status: API keys, Crawdad, registry, installed agents")
+  .action(async () => {
+    await statusCommand();
+  });
+
+// Memory
+const memory = program
+  .command("memory")
+  .description("Manage persistent memory");
+
+memory
+  .command("list")
+  .description("List all persistent memory entries")
   .action(() => {
-    publishCommand();
+    memoryListCommand();
+  });
+
+memory
+  .command("clear")
+  .description("Clear all persistent memory")
+  .action(() => {
+    memoryClearCommand();
+  });
+
+memory
+  .command("search <query>")
+  .description("Search persistent memory entries")
+  .action((query: string) => {
+    memorySearchCommand(query);
   });
 
 program.parse();

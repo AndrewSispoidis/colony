@@ -1,1 +1,1 @@
-export declare function publishCommand(): void;
+export declare function publishCommand(): Promise<void>;
