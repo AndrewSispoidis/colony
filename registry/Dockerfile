@@ -2,10 +2,10 @@ FROM node:22-slim
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY registry/package.json registry/package-lock.json* ./
 RUN npm install --production
 
-COPY . .
+COPY registry/ .
 
 EXPOSE 3000
 
