@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "dockerfilePath": "registry/Dockerfile",
+    "watchPatterns": ["registry/**"]
+  },
+  "deploy": {
+    "startCommand": "cd registry && node server.js",
+    "healthcheckPath": "/health",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}

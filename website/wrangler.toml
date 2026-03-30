@@ -1,0 +1,7 @@
+name = "colony-website"
+main = "worker.js"
+compatibility_date = "2024-12-01"
+
+[route]
+pattern = "colony.dev/*"
+zone_name = "colony.dev"
