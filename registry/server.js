@@ -260,12 +260,18 @@ fastify.get("/health", async () => ({ status: "ok", db: dbReady }));
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
 
-try {
-  if (pool) {
+if (pool) {
+  try {
     await initDB();
     await seed();
     dbReady = true;
+    fastify.log.info("Database connected and seeded");
+  } catch (err) {
+    fastify.log.error({ err }, "Database initialization failed — starting without DB");
   }
+}
+
+try {
   await fastify.listen({ port: PORT, host: "0.0.0.0" });
   fastify.log.info(`Server listening on port ${PORT}`);
 } catch (err) {
