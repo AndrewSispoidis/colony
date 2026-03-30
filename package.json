@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
-    "colony": "./dist/index.js"
+    "colony": "dist/index.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
