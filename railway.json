@@ -5,7 +5,7 @@
     "watchPatterns": ["registry/**"]
   },
   "deploy": {
-    "startCommand": "cd registry && node server.js",
+    "startCommand": "node server.js",
     "healthcheckPath": "/health",
     "restartPolicyType": "ON_FAILURE"
   }
