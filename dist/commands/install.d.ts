@@ -1,1 +1,1 @@
-export declare function installCommand(agentName: string): void;
+export declare function installCommand(agentName: string): Promise<void>;

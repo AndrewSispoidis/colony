@@ -53,8 +53,8 @@ program
 program
     .command("install <agent>")
     .description("Install an agent from the registry")
-    .action((agent) => {
-    installCommand(agent);
+    .action(async (agent) => {
+    await installCommand(agent);
 });
 // List
 program

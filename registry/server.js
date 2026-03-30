@@ -4,7 +4,14 @@ import pg from "pg";
 
 const { Pool } = pg;
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+let pool = null;
+let dbReady = false;
+
+if (process.env.DATABASE_URL) {
+  pool = new Pool({ connectionString: process.env.DATABASE_URL });
+} else {
+  console.warn("WARNING: DATABASE_URL not set — running without database");
+}
 
 const fastify = Fastify({ logger: true });
 await fastify.register(cors);
@@ -160,7 +167,8 @@ function requireAuth(request, reply) {
 // --- Routes ---
 
 // GET /agents — list all agents (with optional ?tag= and ?q= search)
-fastify.get("/agents", async (request) => {
+fastify.get("/agents", async (request, reply) => {
+  if (!pool) return reply.code(503).send({ error: "Database not configured" });
   const { tag, q } = request.query;
   let query = "SELECT DISTINCT ON (namespace, name) namespace, name, version, description, tags, created_at FROM agents";
   const conditions = [];
@@ -186,6 +194,7 @@ fastify.get("/agents", async (request) => {
 
 // GET /agents/:namespace/:name — get agent spec (latest version)
 fastify.get("/agents/:namespace/:name", async (request, reply) => {
+  if (!pool) return reply.code(503).send({ error: "Database not configured" });
   const { namespace, name } = request.params;
   const { rows } = await pool.query(
     "SELECT * FROM agents WHERE namespace = $1 AND name = $2 ORDER BY created_at DESC LIMIT 1",
@@ -197,6 +206,7 @@ fastify.get("/agents/:namespace/:name", async (request, reply) => {
 
 // GET /agents/:namespace/:name/:version — get specific version
 fastify.get("/agents/:namespace/:name/:version", async (request, reply) => {
+  if (!pool) return reply.code(503).send({ error: "Database not configured" });
   const { namespace, name, version } = request.params;
   const { rows } = await pool.query(
     "SELECT * FROM agents WHERE namespace = $1 AND name = $2 AND version = $3",
@@ -207,7 +217,8 @@ fastify.get("/agents/:namespace/:name/:version", async (request, reply) => {
 });
 
 // GET /agents/:namespace/:name/versions — list all versions
-fastify.get("/agents/:namespace/:name/versions", async (request) => {
+fastify.get("/agents/:namespace/:name/versions", async (request, reply) => {
+  if (!pool) return reply.code(503).send({ error: "Database not configured" });
   const { namespace, name } = request.params;
   const { rows } = await pool.query(
     "SELECT version, created_at FROM agents WHERE namespace = $1 AND name = $2 ORDER BY created_at DESC",
@@ -218,6 +229,7 @@ fastify.get("/agents/:namespace/:name/versions", async (request) => {
 
 // POST /agents — publish an agent (requires auth token)
 fastify.post("/agents", async (request, reply) => {
+  if (!pool) return reply.code(503).send({ error: "Database not configured" });
   if (!requireAuth(request, reply)) return;
 
   const { namespace, name, version, spec, description, tags } = request.body;
@@ -242,16 +254,20 @@ fastify.post("/agents", async (request, reply) => {
 });
 
 // Health check
-fastify.get("/health", async () => ({ status: "ok" }));
+fastify.get("/health", async () => ({ status: "ok", db: dbReady }));
 
 // --- Start ---
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || "3000", 10);
 
 try {
-  await initDB();
-  await seed();
+  if (pool) {
+    await initDB();
+    await seed();
+    dbReady = true;
+  }
   await fastify.listen({ port: PORT, host: "0.0.0.0" });
+  fastify.log.info(`Server listening on port ${PORT}`);
 } catch (err) {
   fastify.log.error(err);
   process.exit(1);

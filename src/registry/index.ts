@@ -107,11 +107,40 @@ export function resolveAgent(nameOrPath: string): AgentSpec | null {
   return null;
 }
 
-export function installAgent(name: string): boolean {
-  // Check if it's a bundled agent
+const REGISTRY_URL = "https://colony-registry-production.up.railway.app";
+
+async function fetchFromRegistry(name: string): Promise<AgentSpec | null> {
+  // name is like "@community/research-agent" → namespace=community, agentName=research-agent
+  const match = name.match(/^@([^/]+)\/(.+)$/);
+  if (!match) return null;
+  const [, namespace, agentName] = match;
+  try {
+    const res = await fetch(`${REGISTRY_URL}/agents/${namespace}/${agentName}`);
+    if (!res.ok) return null;
+    const data = await res.json() as { spec?: AgentSpec; description?: string; name?: string };
+    if (data.spec) return data.spec as AgentSpec;
+    // Fallback: treat the whole response as a spec
+    return data as unknown as AgentSpec;
+  } catch {
+    return null;
+  }
+}
+
+export async function installAgent(name: string): Promise<boolean> {
+  const agentsDir = getAgentsDir();
+  const agentDir = path.join(agentsDir, name.replace("/", path.sep));
+
+  // Try the remote registry first
+  const remoteSpec = await fetchFromRegistry(name);
+  if (remoteSpec) {
+    fs.mkdirSync(agentDir, { recursive: true });
+    const yamlContent = yaml.dump(remoteSpec);
+    fs.writeFileSync(path.join(agentDir, "colony.agent.yaml"), yamlContent, "utf-8");
+    return true;
+  }
+
+  // Fall back to bundled agents
   if (name in BUNDLED_AGENTS) {
-    const agentsDir = getAgentsDir();
-    const agentDir = path.join(agentsDir, name.replace("/", path.sep));
     fs.mkdirSync(agentDir, { recursive: true });
     const spec = BUNDLED_AGENTS[name];
     const yamlContent = yaml.dump(spec);

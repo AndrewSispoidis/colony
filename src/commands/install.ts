@@ -2,10 +2,10 @@ import chalk from "chalk";
 import ora from "ora";
 import { installAgent, getBundledAgentNames, resolveAgent } from "../registry/index.js";
 
-export function installCommand(agentName: string): void {
+export async function installCommand(agentName: string): Promise<void> {
   const spinner = ora(`Installing ${agentName}...`).start();
 
-  const success = installAgent(agentName);
+  const success = await installAgent(agentName);
   if (success) {
     const agent = resolveAgent(agentName);
     spinner.succeed(`Installed ${chalk.cyan(agentName)}`);
